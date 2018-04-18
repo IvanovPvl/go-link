@@ -44,5 +44,9 @@ func GetStatsHandler(c echo.Context) error {
 }
 
 func RedirectHandler(c echo.Context) error {
-	return nil
+	ac := c.(AppContext)
+	short := ac.Param("short")
+	var url string
+	ac.Db.Select("url").From("links").Where("short = ?", short).LoadValue(&url)
+	return ac.Redirect(http.StatusMovedPermanently, url)
 }
