@@ -1,0 +1,19 @@
+[prune]
+  go-tests = true
+  unused-packages = true
+
+[[constraint]]
+  name = "github.com/labstack/echo"
+  version = "3.3.5"
+
+[[constraint]]
+  name = "github.com/joho/godotenv"
+  version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/gocraft/dbr"
+  version = "2.1.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/lib/pq"
