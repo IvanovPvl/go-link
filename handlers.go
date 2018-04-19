@@ -9,6 +9,7 @@ import (
 func CreateLinkHandler(c echo.Context) error {
 	ac := c.(AppContext)
 
+	// TODO: validate
 	link := new(Link)
 	if err := c.Bind(link); err != nil {
 		panic(err)
@@ -34,7 +35,17 @@ func CreateLinkHandler(c echo.Context) error {
 }
 
 func GetStatsHandler(c echo.Context) error {
-	return nil
+	ac := c.(AppContext)
+	short := ac.Param("short")
+	var stats []Stat
+
+	ac.Db.Select("referer", "user_agent", "ip", "stats.created_at").
+		From("links").
+		LeftJoin("stats", "links.id = stats.link_id").
+		Where("short = ?", short).
+		Load(&stats)
+
+	return ac.JSON(http.StatusOK, stats)
 }
 
 func RedirectHandler(c echo.Context) error {
@@ -43,10 +54,8 @@ func RedirectHandler(c echo.Context) error {
 	link := &Link{}
 	err := ac.Db.Select("id", "url", "short").From("links").Where("short = ?", short).LoadStruct(link)
 	if err != nil {
-		panic(err)
+		return ac.JSON(http.StatusNotFound, ErrorResponse{"Link not found."})
 	}
-
-	// TODO: check link
 
 	stat := &Stat{
 		LinkId:    link.Id,
@@ -54,6 +63,7 @@ func RedirectHandler(c echo.Context) error {
 		Referer:   ac.Request().Referer(),
 		UserAgent: ac.Request().UserAgent(),
 	}
+
 	_, err = ac.Db.InsertInto("stats").Columns("referer", "user_agent", "ip", "link_id").Record(stat).Exec()
 	if err != nil {
 		panic(err)

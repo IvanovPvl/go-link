@@ -13,3 +13,7 @@ type Stat struct {
 	Ip        string `json:"ip";db:"ip"`
 	LinkId    int64  `json:"link_id";db:"link_id"`
 }
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
