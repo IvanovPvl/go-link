@@ -6,12 +6,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-type Link struct {
-	Id    int64  `json:"id,omitempty";db:"id"`
-	Url   string `json:"url";db:"url"`
-	Short string `json:"short";db:"short"`
-}
-
 func CreateLinkHandler(c echo.Context) error {
 	ac := c.(AppContext)
 
@@ -46,7 +40,24 @@ func GetStatsHandler(c echo.Context) error {
 func RedirectHandler(c echo.Context) error {
 	ac := c.(AppContext)
 	short := ac.Param("short")
-	var url string
-	ac.Db.Select("url").From("links").Where("short = ?", short).LoadValue(&url)
-	return ac.Redirect(http.StatusMovedPermanently, url)
+	link := &Link{}
+	err := ac.Db.Select("id", "url", "short").From("links").Where("short = ?", short).LoadStruct(link)
+	if err != nil {
+		panic(err)
+	}
+
+	// TODO: check link
+
+	stat := &Stat{
+		LinkId:    link.Id,
+		Ip:        ac.RealIP(),
+		Referer:   ac.Request().Referer(),
+		UserAgent: ac.Request().UserAgent(),
+	}
+	_, err = ac.Db.InsertInto("stats").Columns("referer", "user_agent", "ip", "link_id").Record(stat).Exec()
+	if err != nil {
+		panic(err)
+	}
+
+	return ac.Redirect(http.StatusMovedPermanently, link.Url)
 }
